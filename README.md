@@ -66,9 +66,9 @@ source .venv/bin/activate  # Sur Linux/Mac
 # 3. Installer les dépendances
 pip install -r requirements.txt
 
-# 4. Configurer les variables d'environnement
-cp .env.example .env
-# Éditer .env avec vos clés API Bland AI et OpenAI
+# 4. Configurer les secrets Streamlit
+cp .streamlit/secrets.toml.example .streamlit/secrets.toml
+# Éditer .streamlit/secrets.toml avec vos clés API Bland AI et OpenAI
 
 # 5. Créer les dossiers nécessaires
 mkdir -p data logs
@@ -80,18 +80,44 @@ streamlit run app.py
 # 🌐 Ouvrir http://localhost:8501
 ```
 
-### Configuration `.env`
+### Configuration `.streamlit/secrets.toml`
 
-```bash
-# API Bland AI (appels vocaux)
-BLEND_API_KEY=org_VOTRE_CLE_BLAND_AI
-BLEND_ENDPOINT=https://api.bland.ai/v1/calls
+```toml
+# OpenAI Configuration
+OPENAI_API_KEY = "sk-VOTRE_CLE_OPENAI"
 
-# API OpenAI (analyse transcripts)
-OPENAI_API_KEY=sk-VOTRE_CLE_OPENAI
+# Bland AI Configuration
+BLEND_API_KEY = "org_VOTRE_CLE_BLAND_AI"
+BLEND_ENDPOINT = "https://api.bland.ai/v1/calls"
 ```
 
-> ⚠️ **Sécurité** : Ne jamais commiter le fichier `.env` ! Il est déjà dans `.gitignore`.
+> ⚠️ **Sécurité** : Ne jamais commiter `secrets.toml` ! Il est déjà dans `.gitignore`.
+
+### Option 3 : Déploiement sur Streamlit Cloud ☁️
+
+1. **Pusher le code sur GitHub** (sans secrets.toml)
+```bash
+git add .
+git commit -m "Ready for Streamlit Cloud deployment"
+git push origin main
+```
+
+2. **Créer une app sur Streamlit Cloud**
+   - Aller sur [share.streamlit.io](https://share.streamlit.io)
+   - Connecter votre dépôt GitHub
+   - Sélectionner `hacktogone-voicecheck`
+   - Fichier principal : `app.py`
+
+3. **Configurer les secrets dans Streamlit Cloud**
+   - Dans les paramètres de l'app, section "Secrets"
+   - Copier le contenu de votre `secrets.toml` local
+   - Sauvegarder
+
+4. **Déployer** 🚀
+   - L'app se déploie automatiquement
+   - URL publique générée : `https://VOTRE-APP.streamlit.app`
+
+> 💡 **Astuce** : Les secrets Streamlit Cloud sont chiffrés et ne sont jamais exposés dans les logs.
 
 ---
 

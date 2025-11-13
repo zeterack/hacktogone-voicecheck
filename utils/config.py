@@ -1,35 +1,40 @@
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
+import streamlit as st
 
 class Config:
-    """Configuration centralisée de l'application"""
+    """Configuration centralisée de l'application
     
-    # Mode mock
-    USE_MOCK_SERVICES = os.getenv('USE_MOCK_SERVICES', 'True').lower() == 'true'
+    Utilise st.secrets pour la compatibilité avec Streamlit Cloud.
+    Les secrets sont définis dans .streamlit/secrets.toml (local)
+    ou dans les paramètres de l'app sur Streamlit Cloud.
+    """
     
-    # Twilio
-    TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID', '')
-    TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN', '')
-    TWILIO_PHONE_NUMBER = os.getenv('TWILIO_PHONE_NUMBER', '')
+    @staticmethod
+    def get_secret(key: str, default: str = '') -> str:
+        """Récupère un secret depuis st.secrets avec fallback
+        
+        Args:
+            key: Nom de la clé du secret
+            default: Valeur par défaut si le secret n'existe pas
+            
+        Returns:
+            La valeur du secret ou la valeur par défaut
+        """
+        try:
+            return st.secrets.get(key, default)
+        except (FileNotFoundError, KeyError, AttributeError):
+            # Si secrets.toml n'existe pas ou st.secrets n'est pas initialisé
+            return default
     
     # OpenAI
-    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
+    @property
+    def OPENAI_API_KEY(self) -> str:
+        return self.get_secret('OPENAI_API_KEY', '')
     
-    # Blend AI (remplace Twilio)
-    BLEND_API_KEY = os.getenv('BLEND_API_KEY', '')
-    BLEND_ENDPOINT = os.getenv('BLEND_ENDPOINT', 'https://api.bland.ai/v1/calls')
+    # Bland AI (remplace Twilio)
+    @property
+    def BLEND_API_KEY(self) -> str:
+        return self.get_secret('BLEND_API_KEY', '')
     
-    # Application
-    APP_URL = os.getenv('APP_URL', 'http://localhost:8501')
-    
-    @classmethod
-    def is_mock_mode(cls):
-        """Détermine si on doit utiliser les services mock"""
-        if cls.USE_MOCK_SERVICES:
-            return True
-        # Utiliser mock si les clés API Blend ou OpenAI sont manquantes
-        if not cls.BLEND_API_KEY or not cls.OPENAI_API_KEY:
-            return True
-        return False
+    @property
+    def BLEND_ENDPOINT(self) -> str:
+        return self.get_secret('BLEND_ENDPOINT', 'https://api.bland.ai/v1/calls')

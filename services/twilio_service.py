@@ -36,8 +36,9 @@ class BlendService:
     """
 
     def __init__(self):
-        self.api_key = Config.BLEND_API_KEY
-        self.endpoint = Config.BLEND_ENDPOINT or "https://api.bland.ai/v1/calls"
+        config = Config()
+        self.api_key = config.BLEND_API_KEY
+        self.endpoint = config.BLEND_ENDPOINT or "https://api.bland.ai/v1/calls"
         self.headers = {
             "Authorization": self.api_key,  # Blend utilise la clé directement, pas Bearer
             "Content-Type": "application/json",

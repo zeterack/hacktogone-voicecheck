@@ -13,7 +13,8 @@ class OpenAIService:
     """Service d'analyse des transcripts via OpenAI pour extraire consentement et identité."""
     
     def __init__(self):
-        self.client = OpenAI(api_key=Config.OPENAI_API_KEY)
+        config = Config()
+        self.client = OpenAI(api_key=config.OPENAI_API_KEY)
         logger.info("OpenAIService initialisé")
     
     def analyze_consent_and_identity(self, transcript: str, nom: str, prenom: str) -> Dict[str, Any]:
