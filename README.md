@@ -1,84 +1,128 @@
 # 📞 VoiceCheck AI
 
-Système automatisé de vérification de contacts par téléphone avec intelligence artificielle.
+> Système automatisé de vérification de contacts par téléphone avec intelligence artificielle vocale
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.29-red.svg)](https://streamlit.io/)
+
+---
 
 ## 🎯 Description
 
-VoiceCheck AI est une application développée pour un hackathon de 20h permettant de vérifier automatiquement la validité d'une base de contacts via des appels téléphoniques intelligents. Le système intègre :
+**VoiceCheck AI** est une solution développée lors d'un hackathon de 20h pour automatiser la vérification de bases de contacts via des appels téléphoniques intelligents avec IA conversationnelle.
 
-- ✅ Conformité RGPD avec consentement explicite vocal
-- 🤖 Appels automatisés via Blend AI
-- 🧠 Analyse des transcripts avec OpenAI GPT-3.5
-- 📊 Dashboard de suivi en temps réel
-- 🔄 Système de relances manuelles
-- 📥 Export des résultats en CSV
+### ✨ Fonctionnalités principales
 
-## 🚀 Démarrage rapide
+- 🤖 **Appels automatisés** - Intégration Bland AI pour des conversations naturelles en français
+- 🔒 **Conformité RGPD** - Recueil explicite du consentement vocal avant toute vérification
+- � **Analyse intelligente** - OpenAI GPT-3.5 pour extraire automatiquement les consentements et identités
+- 📞 **Détection de répondeur** - Identification automatique des messageries vocales pour éviter les faux positifs
+- 📊 **Dashboard en temps réel** - Suivi visuel des campagnes avec statistiques et graphiques
+- 🔄 **Système de relances** - Gestion intelligente des contacts à rappeler
+- 📥 **Export CSV** - Extraction des résultats avec colonnes détaillées (refus, répondeur, etc.)
+- 📝 **Logging complet** - Traçabilité totale avec émojis pour faciliter le debug
 
-### Avec Docker (recommandé)
+---
+
+## 🚀 Installation et démarrage
+
+### Prérequis
+
+- Python 3.11 ou supérieur
+- Compte Bland AI (pour les appels réels)
+- Clé API OpenAI (pour l'analyse)
+
+### Option 1 : Avec Docker 🐳 (recommandé)
 
 ```bash
-# 1. Copier le fichier d'environnement
-cp .env.example .env
+# 1. Cloner le dépôt
+git clone https://github.com/zeterack/hacktogone-voicecheck.git
+cd hacktogone-voicecheck
 
-# 2. Lancer avec Docker Compose
+# 2. Configurer les variables d'environnement
+cp .env.example .env
+# Éditer .env avec vos clés API
+
+# 3. Lancer avec Docker Compose
 docker-compose up --build
 
-# 3. Accéder à l'application
-# Ouvrir http://localhost:8501
+# 4. Accéder à l'application
+# 🌐 Ouvrir http://localhost:8501
 ```
 
-### Sans Docker
+### Option 2 : Installation locale 💻
 
 ```bash
-# 1. Installer les dépendances
+# 1. Cloner le dépôt
+git clone https://github.com/zeterack/hacktogone-voicecheck.git
+cd hacktogone-voicecheck
+
+# 2. Créer un environnement virtuel
+python -m venv .venv
+source .venv/bin/activate  # Sur Linux/Mac
+# .venv\Scripts\activate   # Sur Windows
+
+# 3. Installer les dépendances
 pip install -r requirements.txt
 
-# 2. Copier le fichier d'environnement
+# 4. Configurer les variables d'environnement
 cp .env.example .env
+# Éditer .env avec vos clés API Bland AI et OpenAI
 
-# 3. Lancer l'application
+# 5. Créer les dossiers nécessaires
+mkdir -p data logs
+
+# 6. Lancer l'application
 streamlit run app.py
+
+# 7. Accéder à l'application
+# 🌐 Ouvrir http://localhost:8501
 ```
 
-## 🧪 Mode MOCK (sans API)
+### Configuration `.env`
 
-Par défaut, l'application fonctionne en **mode MOCK** qui simule les appels Twilio et la reconnaissance vocale OpenAI. C'est idéal pour tester sans frais et sans clés API.
-
-**Caractéristiques du mode MOCK :**
-- ✅ Simulation de 70% de consentements acceptés
-- ✅ Simulation de 80% d'identités confirmées
-- ✅ Aucun vrai appel téléphonique effectué
-- ✅ Temps de réponse simulés réalistes
-
-Pour activer le mode MOCK, dans le fichier `.env` :
-```
-USE_MOCK_SERVICES=True
-```
-
-## 🔑 Mode RÉEL (avec API Blend AI et OpenAI)
-
-Pour utiliser les vraies API :
-
-1. Obtenir les clés API :
-   - Compte Blend AI : https://app.bland.ai (pour les appels téléphoniques)
-   - Clé OpenAI : https://platform.openai.com (pour l'analyse des transcripts)
-
-2. Configurer le fichier `.env` :
 ```bash
-USE_MOCK_SERVICES=False
-BLEND_API_KEY=votre_clé_blend
+# API Bland AI (appels vocaux)
+BLEND_API_KEY=org_VOTRE_CLE_BLAND_AI
 BLEND_ENDPOINT=https://api.bland.ai/v1/calls
-OPENAI_API_KEY=sk-...
+
+# API OpenAI (analyse transcripts)
+OPENAI_API_KEY=sk-VOTRE_CLE_OPENAI
 ```
 
-3. Relancer l'application
+> ⚠️ **Sécurité** : Ne jamais commiter le fichier `.env` ! Il est déjà dans `.gitignore`.
 
-**Note importante**: En mode réel, l'application :
-- Initie les appels via Blend AI avec un prompt personnalisé
-- Attend la fin de l'appel et récupère le transcript (polling toutes les 5 secondes)
-- Envoie le transcript à OpenAI GPT-3.5 pour extraire le consentement RGPD et la confirmation d'identité
-- Sauvegarde les résultats dans la base de données JSON
+---
+
+## 💡 Utilisation
+
+### 1. Importer des contacts
+
+1. Préparer un fichier CSV avec les colonnes : `nom,prenom,telephone`
+2. Dans l'onglet **"Campagne"**, cliquer sur "Choisir un fichier CSV"
+3. Vérifier l'aperçu et cliquer sur "Ajouter à la base"
+
+### 2. Lancer une campagne
+
+1. Dans l'onglet **"Campagne"**, section "Lancer la campagne"
+2. Cliquer sur **"🚀 Lancer la campagne"**
+3. L'application appellera automatiquement tous les contacts en attente
+4. Suivre la progression en temps réel
+
+### 3. Consulter les résultats
+
+1. Onglet **"Dashboard"** : Statistiques globales et graphiques
+2. Section **"Résultats détaillés"** : Tableau complet avec colonnes :
+   - Consentement, Refus explicite, Identité confirmée
+   - Répondeur détecté, Raison de la décision
+3. Onglet **"Export"** : Télécharger les résultats en CSV
+
+### 4. Relancer les contacts
+
+Dans l'onglet **"Campagne"**, section "Relances manuelles" :
+- Les contacts sans réponse claire ou avec répondeur apparaissent automatiquement
+- Cliquer sur **"📞 Relancer ces contacts"** pour les remettre en file d'attente
 
 ## 📋 Fonctionnalités
 
@@ -99,51 +143,75 @@ OPENAI_API_KEY=sk-...
 - Données complètes des appels
 - Statistiques détaillées
 
-## 🔄 Processus d'appel
+---
 
-Le système effectue un appel unique en deux étapes vocales :
+## 🔄 Flux d'appel automatisé
 
-### Étape 1 : Consentement RGPD (vocal)
-- Message vocal : "Conformément au règlement RGPD, acceptez-vous de poursuivre cet échange ?"
-- L'utilisateur répond oralement : "oui" / "non"
-- Blend AI enregistre la réponse audio
-- Pas de réponse = À rappeler
+L'application effectue un appel unique en 2 étapes vocales + 1 analyse IA :
 
-### Étape 2 : Vérification d'identité (IA vocale)
-- Question : "Confirmez-vous être [Prénom] [Nom] ?"
-- L'utilisateur répond oralement : "oui" / "non" / "c'est moi"
-- Blend AI enregistre la conversation complète
+### 📞 Étape 1 : Consentement RGPD (Bland AI)
 
-### Étape 3 : Analyse avec OpenAI
-- Récupération du transcript complet de la conversation
-- Envoi à OpenAI GPT-3.5 pour analyse
-- Extraction automatique du consentement et de la confirmation d'identité
-- Sauvegarde des résultats dans la base de données
+```
+IA: "Bonjour, conformément au règlement RGPD, acceptez-vous de 
+     poursuivre cet échange pour la vérification de vos données?"
+```
+
+- ✅ **Oui** → Passage à l'étape 2
+- ❌ **Non** → Fin de l'appel, contact à relancer
+- ⚪ **Pas de réponse** → À rappeler
+
+### 🔍 Étape 2 : Vérification d'identité (Bland AI)
+
+```
+IA: "Confirmez-vous être [Prénom] [Nom]?"
+```
+
+- ✅ **Oui / C'est moi** → Identité confirmée
+- ❌ **Non** → Identité rejetée
+- ⚪ **Pas de réponse** → À rappeler
+
+### 🧠 Étape 3 : Analyse automatique (OpenAI GPT-3.5)
+
+- 📝 Récupération du transcript complet (polling toutes les 5s)
+- 🤖 Envoi à OpenAI pour extraction structurée :
+  - `consent`: `true`/`false`/`null`
+  - `identity_confirmed`: `true`/`false`/`null`
+  - `reasoning`: Explication de la décision
+- 📞 **Détection de répondeur** : Si "je ne suis pas disponible" détecté → `consent=false`
+- 💾 Sauvegarde dans `data/results.json`
+
+---
 
 ## 📁 Structure du projet
 
 ```
-hacktogone/
-├── app.py                          # Application Streamlit principale
-├── requirements.txt                # Dépendances Python
-├── Dockerfile                      # Configuration Docker
-├── docker-compose.yml              # Orchestration Docker
-├── .env.example                    # Exemple de configuration
-├── services/
-│   ├── twilio_service.py          # Service Twilio réel
-│   ├── twilio_mock_service.py     # Service Twilio simulé
-│   ├── speech_service.py          # Service OpenAI Whisper réel
-│   ├── speech_mock_service.py     # Service OpenAI simulé
-│   └── analysis_service.py        # Service d'analyse
-├── utils/
-│   ├── json_database.py           # Gestion base de données JSON
-│   ├── csv_handler.py             # Import/Export CSV
-│   └── config.py                  # Configuration centralisée
-└── data/
-    ├── contacts.json              # Base de contacts
-    ├── results.json               # Résultats des appels
-    └── sample_contacts.csv        # Exemple de CSV
+hacktogone-voicecheck/
+├── 📄 app.py                       # Application Streamlit principale
+├── 📦 requirements.txt             # Dépendances Python (streamlit, openai>=2.8.0, requests)
+├── 🐳 Dockerfile                   # Image Docker
+├── 🐳 docker-compose.yml           # Orchestration multi-conteneurs
+├── 🔐 .env.example                 # Template de configuration
+├── 📚 docs/                        # Documentation complète
+│   ├── technical_doc.md           # Architecture détaillée
+│   ├── detection_repondeur.md     # Logique de détection voicemail
+│   ├── logging_enhanced.md        # Système de logs avec émojis
+│   └── quick_start.md             # Guide de démarrage rapide
+├── 🤖 services/
+│   ├── twilio_service.py          # BlendService - API Bland AI
+│   ├── openai_service.py          # Analyse transcripts avec GPT-3.5
+│   └── analysis_service.py        # Statistiques et métriques
+├── 🛠️ utils/
+│   ├── json_database.py           # CRUD sur fichiers JSON
+│   ├── csv_handler.py             # Import/Export CSV avec format FR
+│   └── config.py                  # Configuration centralisée (.env)
+└── 💾 data/
+    ├── contacts.json              # Base de contacts (gitignored)
+    ├── results.json               # Résultats des appels (gitignored)
+    ├── contacts.example.json      # Fichier vide pour référence
+    └── sample_contacts.csv        # Exemple de format CSV
 ```
+
+> **Note :** Les fichiers sensibles (`contacts.json`, `results.json`, `.env`, `logs/`) sont exclus du dépôt Git.
 
 ## 📊 Format CSV pour l'import
 
@@ -158,20 +226,67 @@ Martin,Marie,+33687654321
 - `prenom` : Prénom
 - `telephone` : Numéro au format international (+33...)
 
-## 🛠️ Technologies
+---
 
-- **Python 3.11** : Langage principal
-- **Streamlit** : Interface web
-- **Blend AI** : API d'appels téléphoniques avec IA conversationnelle
-- **OpenAI GPT-3.5** : Analyse des transcripts et extraction d'informations
-- **Docker** : Conteneurisation
-- **JSON** : Base de données légère
-- **Requests** : Client HTTP pour les APIs
+## 🛠️ Stack technique
+
+| Technologie | Version | Usage |
+|------------|---------|-------|
+| **Python** | 3.11+ | Langage principal |
+| **Streamlit** | 1.29.0 | Interface web interactive |
+| **Bland AI** | API v1 | Appels vocaux avec IA conversationnelle |
+| **OpenAI** | 2.8.0+ | Analyse transcripts (GPT-3.5-turbo) |
+| **Pandas** | 2.1.3 | Manipulation CSV et DataFrames |
+| **Requests** | 2.31.0 | Client HTTP pour APIs REST |
+| **Docker** | - | Conteneurisation multi-environnements |
+
+---
+
+## 📊 Exemple de résultats exportés
+
+| Nom | Prénom | Téléphone | Consentement | Refus explicite | Identité confirmée | Répondeur détecté | Raison |
+|-----|--------|-----------|--------------|-----------------|-------------------|-------------------|--------|
+| Dupont | Jean | +33612345678 | ✅ True | ❌ False | ✅ True | ❌ False | Consentement et identité confirmés |
+| Martin | Sophie | +33698765432 | ❌ False | ❌ False | ❌ False | ✅ True | répondeur détecté |
+| Bernard | Marc | +33687654321 | ❌ False | ✅ True | ❌ False | ❌ False | Refus explicite du consentement |
+
+---
+
+## 🎥 Démonstration
+
+### Captures d'écran
+
+#### Dashboard
+![Dashboard](https://via.placeholder.com/800x400?text=Dashboard+VoiceCheck+AI)
+
+#### Lancement de campagne
+![Campagne](https://via.placeholder.com/800x400?text=Lancement+Campagne)
+
+---
+
+## 🤝 Contribution
+
+Développé lors du hackathon Blueway 2025 (20h).
+
+**Équipe :**
+- Développement IA vocale
+- Intégration API Bland AI + OpenAI
+- Conformité RGPD
+
+---
 
 ## 📝 Licence
 
-Projet développé dans le cadre d'un hackathon de 20h.
+Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
 
-## 👥 Support
+---
 
-Pour toute question ou problème, consultez la documentation dans le dossier `docs/`.
+## 📞 Support
+
+- 📚 Documentation complète : `docs/`
+- 🐛 Rapporter un bug : [GitHub Issues](https://github.com/zeterack/hacktogone-voicecheck/issues)
+- 💬 Questions : Ouvrir une discussion GitHub
+
+---
+
+**Made with ❤️ during Blueway Hackathon 2025**

@@ -5,8 +5,6 @@ from utils.config import Config
 from utils.json_database import JsonDatabase
 from utils.csv_handler import CsvHandler
 from services.twilio_service import BlendService
-from services.twilio_mock_service import TwilioMockService
-from services.speech_mock_service import SpeechMockService
 from services.openai_service import OpenAIService
 from services.analysis_service import AnalysisService
 
@@ -28,24 +26,12 @@ st.set_page_config(
 db = JsonDatabase()
 analysis = AnalysisService(db)
 
-# Détection du mode (mock ou réel)
-is_mock = Config.is_mock_mode()
-
 # Initialisation des services
-if is_mock:
-    twilio_service = TwilioMockService()
-    speech_service = SpeechMockService()
-    openai_service = None  # Pas besoin en mode mock
-else:
-    twilio_service = BlendService()
-    openai_service = OpenAIService()
+twilio_service = BlendService()
+openai_service = OpenAIService()
 
-# Titre et mode
+# Titre
 st.title("📞 VoiceCheck AI")
-if is_mock:
-    st.warning("⚠️ Mode MOCK activé - Les appels sont simulés (aucun vrai appel ne sera effectué)")
-else:
-    st.success("✅ Mode RÉEL - Les appels Twilio seront effectués")
 
 # Tabs
 tab1, tab2, tab3 = st.tabs(["📊 Dashboard", "📞 Campagne", "📥 Export"])
@@ -170,120 +156,116 @@ Martin,Marie,+33687654321""")
                 status_text.text(f"Appel en cours : {contact['prenom']} {contact['nom']}...")
                 
                 try:
-                    # En mode mock, simuler directement les réponses
-                    if is_mock:
-                        # Étape 1: Initier l'appel (mock)
-                        call_sid = twilio_service.make_call(
-                            contact['telephone'],
-                            contact['id']
-                        )
+                    # Appel RÉEL avec Blend AI + OpenAI
+                    logger.info(f"Début appel RÉEL pour {contact['prenom']} {contact['nom']} ({contact['telephone']})")
+                    
+                    # Construire le prompt de tâche
+                    task_prompt = twilio_service.build_task_prompt(
+                        nom=contact['nom'],
+                        prenom=contact['prenom']
+                    )
+                    
+                    # Initier l'appel via Blend
+                    call_response = twilio_service.make_call(
+                        to_number=contact['telephone'],
+                        contact_id=contact['id'],
+                        task_prompt=task_prompt,
+                        first_sentence="Bonjour, je suis une assistante virtuelle de VoiceCheck AI.",
+                        language="fr"
+                    )
+                    
+                    if call_response.get('error'):
+                        error_msg = f"Erreur Blend: {call_response.get('message')}"
+                        logger.error(f"{error_msg} - Response: {call_response}")
+                        st.error(error_msg)
+                        st.error(f"Détails: Status {call_response.get('status_code')} - Voir logs/blend_api.log pour plus d'infos")
+                        continue
+                    
+                    call_id = call_response.get('call_id') or call_response.get('id')
+                    
+                    # Attendre que l'appel se termine (polling)
+                    status_text.text(f"⏳ Appel en cours avec {contact['prenom']} {contact['nom']}... (attente du transcript)")
+                    
+                    max_attempts = 60  # 60 tentatives = ~5 minutes max
+                    attempt = 0
+                    call_completed = False
+                    transcript = ""
+                    
+                    while attempt < max_attempts and not call_completed:
+                        time.sleep(5)  # Attendre 5 secondes entre chaque vérification
+                        attempt += 1
                         
-                        time.sleep(1)  # Simulation de l'appel
+                        logger.info(f"⏳ Polling tentative {attempt}/{max_attempts} pour call_id: {call_id}")
                         
-                        # Étape 1: Consentement
-                        consent_result = twilio_service.simulate_consent_response()
+                        # Récupérer le statut de l'appel
+                        call_status = twilio_service.fetch_call_result(call_id)
                         
+                        if call_status.get('error'):
+                            logger.error(f"❌ Erreur lors de la récupération du statut: {call_status.get('message')}")
+                            break
+                        
+                        # Vérifier si l'appel est terminé
+                        status = call_status.get('status', '').lower()
+                        logger.debug(f"Status actuel: {status}")
+                        
+                        if status in ['completed', 'done', 'finished']:
+                            call_completed = True
+                            # Bland.ai utilise 'concatenated_transcript'
+                            transcript = call_status.get('concatenated_transcript', '') or call_status.get('transcript', '') or call_status.get('transcription', '')
+                            logger.info(f"✅ Appel terminé! Transcript récupéré (longueur: {len(transcript)} caractères)")
+                            logger.debug(f"Transcript complet: {transcript[:500]}..." if len(transcript) > 500 else f"Transcript complet: {transcript}")
+                            break
+                    
+                    if not call_completed:
+                        logger.warning(f"⚠️ Timeout: Appel non terminé après {max_attempts} tentatives ({max_attempts * 5} secondes)")
+                    
+                    if not transcript:
+                        logger.warning(f"⚠️ Aucun transcript disponible pour call_id: {call_id}")
+                    
+                    if not call_completed or not transcript:
+                        # Pas de transcript disponible
+                        logger.info(f"📝 Création du résultat avec no_response=True pour contact {contact['id']}")
                         result = {
                             'contact_id': contact['id'],
                             'nom': contact['nom'],
                             'prenom': contact['prenom'],
                             'telephone': contact['telephone'],
-                            'call_sid': call_sid,
-                            'consent': consent_result.get('consent'),
-                            'no_response': consent_result.get('no_response', False),
-                            'identity_confirmed': None
+                            'call_sid': call_id,
+                            'consent': None,
+                            'identity_confirmed': None,
+                            'no_response': True,
+                            'transcription': ''
                         }
-                        
-                        # Étape 2: Si consentement donné, vérifier l'identité
-                        if consent_result.get('consent'):
-                            time.sleep(1)  # Simulation
-                            identity_result = twilio_service.simulate_identity_confirmation()
-                            
-                            result['identity_confirmed'] = identity_result.get('identity_confirmed')
-                            result['transcription'] = identity_result.get('transcription')
-                            
-                            if identity_result.get('no_response'):
-                                result['no_response'] = True
-                        
-                        # Sauvegarder le résultat
-                        db.save_result(result)
-                        
-                        # Mettre à jour le statut du contact
-                        if result.get('identity_confirmed'):
-                            db.update_contact_status(contact['id'], 'completed')
-                        else:
-                            db.update_contact_status(contact['id'], 'pending')
-                    
                     else:
-                        # MODE RÉEL avec Blend AI + OpenAI
-                        logger.info(f"Début appel RÉEL pour {contact['prenom']} {contact['nom']} ({contact['telephone']})")
+                        # Analyser le transcript avec OpenAI
+                        logger.info(f"🤖 Début de l'analyse OpenAI pour {contact['prenom']} {contact['nom']}")
+                        status_text.text(f"🤖 Analyse du transcript avec OpenAI pour {contact['prenom']} {contact['nom']}...")
                         
-                        # Construire le prompt de tâche
-                        task_prompt = twilio_service.build_task_prompt(
-                            nom=contact['nom'],
-                            prenom=contact['prenom']
-                        )
-                        
-                        # Initier l'appel via Blend
-                        call_response = twilio_service.make_call(
-                            to_number=contact['telephone'],
-                            contact_id=contact['id'],
-                            task_prompt=task_prompt,
-                            first_sentence="Bonjour, je suis une assistante virtuelle de VoiceCheck AI.",
-                            language="fr"
-                        )
-                        
-                        if call_response.get('error'):
-                            error_msg = f"Erreur Blend: {call_response.get('message')}"
-                            logger.error(f"{error_msg} - Response: {call_response}")
-                            st.error(error_msg)
-                            st.error(f"Détails: Status {call_response.get('status_code')} - Voir logs/blend_api.log pour plus d'infos")
-                            continue
-                        
-                        call_id = call_response.get('call_id') or call_response.get('id')
-                        
-                        # Attendre que l'appel se termine (polling)
-                        status_text.text(f"⏳ Appel en cours avec {contact['prenom']} {contact['nom']}... (attente du transcript)")
-                        
-                        max_attempts = 60  # 60 tentatives = ~5 minutes max
-                        attempt = 0
-                        call_completed = False
-                        transcript = ""
-                        
-                        while attempt < max_attempts and not call_completed:
-                            time.sleep(5)  # Attendre 5 secondes entre chaque vérification
-                            attempt += 1
+                        try:
+                            analysis_result = openai_service.analyze_consent_and_identity(
+                                transcript=transcript,
+                                nom=contact['nom'],
+                                prenom=contact['prenom']
+                            )
                             
-                            logger.info(f"⏳ Polling tentative {attempt}/{max_attempts} pour call_id: {call_id}")
+                            logger.info(f"✅ Analyse OpenAI terminée: consent={analysis_result.get('consent')}, identity={analysis_result.get('identity_confirmed')}")
+                            logger.debug(f"Reasoning: {analysis_result.get('reasoning', 'N/A')}")
                             
-                            # Récupérer le statut de l'appel
-                            call_status = twilio_service.fetch_call_result(call_id)
-                            
-                            if call_status.get('error'):
-                                logger.error(f"❌ Erreur lors de la récupération du statut: {call_status.get('message')}")
-                                break
-                            
-                            # Vérifier si l'appel est terminé
-                            status = call_status.get('status', '').lower()
-                            logger.debug(f"Status actuel: {status}")
-                            
-                            if status in ['completed', 'done', 'finished']:
-                                call_completed = True
-                                # Bland.ai utilise 'concatenated_transcript'
-                                transcript = call_status.get('concatenated_transcript', '') or call_status.get('transcript', '') or call_status.get('transcription', '')
-                                logger.info(f"✅ Appel terminé! Transcript récupéré (longueur: {len(transcript)} caractères)")
-                                logger.debug(f"Transcript complet: {transcript[:500]}..." if len(transcript) > 500 else f"Transcript complet: {transcript}")
-                                break
-                        
-                        if not call_completed:
-                            logger.warning(f"⚠️ Timeout: Appel non terminé après {max_attempts} tentatives ({max_attempts * 5} secondes)")
-                        
-                        if not transcript:
-                            logger.warning(f"⚠️ Aucun transcript disponible pour call_id: {call_id}")
-                        
-                        if not call_completed or not transcript:
-                            # Pas de transcript disponible
-                            logger.info(f"📝 Création du résultat avec no_response=True pour contact {contact['id']}")
+                            result = {
+                                'contact_id': contact['id'],
+                                'nom': contact['nom'],
+                                'prenom': contact['prenom'],
+                                'telephone': contact['telephone'],
+                                'call_sid': call_id,
+                                'consent': analysis_result.get('consent'),
+                                'identity_confirmed': analysis_result.get('identity_confirmed'),
+                                'no_response': False,
+                                'transcription': transcript,
+                                'reasoning': analysis_result.get('reasoning', '')
+                            }
+                        except Exception as e:
+                            logger.error(f"❌ Erreur lors de l'analyse OpenAI: {str(e)}")
+                            logger.exception(e)
                             result = {
                                 'contact_id': contact['id'],
                                 'nom': contact['nom'],
@@ -293,62 +275,21 @@ Martin,Marie,+33687654321""")
                                 'consent': None,
                                 'identity_confirmed': None,
                                 'no_response': True,
-                                'transcription': ''
+                                'transcription': transcript,
+                                'error': str(e)
                             }
-                        else:
-                            # Analyser le transcript avec OpenAI
-                            logger.info(f"🤖 Début de l'analyse OpenAI pour {contact['prenom']} {contact['nom']}")
-                            status_text.text(f"🤖 Analyse du transcript avec OpenAI pour {contact['prenom']} {contact['nom']}...")
-                            
-                            try:
-                                analysis_result = openai_service.analyze_consent_and_identity(
-                                    transcript=transcript,
-                                    nom=contact['nom'],
-                                    prenom=contact['prenom']
-                                )
-                                
-                                logger.info(f"✅ Analyse OpenAI terminée: consent={analysis_result.get('consent')}, identity={analysis_result.get('identity_confirmed')}")
-                                logger.debug(f"Reasoning: {analysis_result.get('reasoning', 'N/A')}")
-                                
-                                result = {
-                                    'contact_id': contact['id'],
-                                    'nom': contact['nom'],
-                                    'prenom': contact['prenom'],
-                                    'telephone': contact['telephone'],
-                                    'call_sid': call_id,
-                                    'consent': analysis_result.get('consent'),
-                                    'identity_confirmed': analysis_result.get('identity_confirmed'),
-                                    'no_response': False,
-                                    'transcription': transcript,
-                                    'reasoning': analysis_result.get('reasoning', '')
-                                }
-                            except Exception as e:
-                                logger.error(f"❌ Erreur lors de l'analyse OpenAI: {str(e)}")
-                                logger.exception(e)
-                                result = {
-                                    'contact_id': contact['id'],
-                                    'nom': contact['nom'],
-                                    'prenom': contact['prenom'],
-                                    'telephone': contact['telephone'],
-                                    'call_sid': call_id,
-                                    'consent': None,
-                                    'identity_confirmed': None,
-                                    'no_response': True,
-                                    'transcription': transcript,
-                                    'error': str(e)
-                                }
-                        
-                        # Sauvegarder le résultat
-                        logger.info(f"💾 Sauvegarde du résultat pour contact {contact['id']}")
-                        db.save_result(result)
-                        
-                        # Mettre à jour le statut du contact
-                        if result.get('identity_confirmed') and result.get('consent'):
-                            logger.info(f"✅ Contact {contact['id']} marqué comme 'completed' (consent + identity OK)")
-                            db.update_contact_status(contact['id'], 'completed')
-                        else:
-                            logger.info(f"⏸️ Contact {contact['id']} reste en 'pending' (consent={result.get('consent')}, identity={result.get('identity_confirmed')})")
-                            db.update_contact_status(contact['id'], 'pending')
+                    
+                    # Sauvegarder le résultat
+                    logger.info(f"💾 Sauvegarde du résultat pour contact {contact['id']}")
+                    db.save_result(result)
+                    
+                    # Mettre à jour le statut du contact
+                    if result.get('identity_confirmed') and result.get('consent'):
+                        logger.info(f"✅ Contact {contact['id']} marqué comme 'completed' (consent + identity OK)")
+                        db.update_contact_status(contact['id'], 'completed')
+                    else:
+                        logger.info(f"⏸️ Contact {contact['id']} reste en 'pending' (consent={result.get('consent')}, identity={result.get('identity_confirmed')})")
+                        db.update_contact_status(contact['id'], 'pending')
                     
                     progress_bar.progress((i + 1) / total)
                     
