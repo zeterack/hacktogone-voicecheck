@@ -1,6 +1,7 @@
 import requests
 import json
 import logging
+import os
 from typing import Optional, Dict, Any
 from datetime import datetime
 from utils.config import Config
@@ -9,21 +10,25 @@ from utils.config import Config
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-# Handler pour fichier
-file_handler = logging.FileHandler('logs/blend_api.log')
-file_handler.setLevel(logging.DEBUG)
-
-# Handler pour console
+# Handler pour console (toujours actif)
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.INFO)
 
 # Format des logs
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-file_handler.setFormatter(formatter)
 console_handler.setFormatter(formatter)
 
-logger.addHandler(file_handler)
 logger.addHandler(console_handler)
+
+# Handler pour fichier (uniquement en local, pas en production)
+if os.path.exists('logs'):
+    try:
+        file_handler = logging.FileHandler('logs/blend_api.log')
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+    except Exception as e:
+        logger.warning(f"Could not create file handler: {e}")
 
 
 class BlendService:

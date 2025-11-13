@@ -1,6 +1,7 @@
 import streamlit as st
 import time
 import logging
+import os
 from utils.config import Config
 from utils.json_database import JsonDatabase
 from utils.csv_handler import CsvHandler
@@ -11,9 +12,20 @@ from services.analysis_service import AnalysisService
 # Configuration du logger pour l'app
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-handler = logging.FileHandler('logs/app.log')
-handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-logger.addHandler(handler)
+
+# Handler pour console (toujours actif)
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+logger.addHandler(console_handler)
+
+# Handler pour fichier (uniquement en local, pas en production)
+if os.path.exists('logs'):
+    try:
+        file_handler = logging.FileHandler('logs/app.log')
+        file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+        logger.addHandler(file_handler)
+    except Exception:
+        pass  # Silently ignore if file logging fails
 
 # Configuration de la page
 st.set_page_config(
