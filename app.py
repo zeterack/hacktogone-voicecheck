@@ -168,9 +168,9 @@ Martin,Marie,0687654321""")
         display_contacts = []
         for contact in pending_contacts:
             display_contact = contact.copy()
-            # Si le contact a un updated_at, c'est qu'il a déjà été appelé -> "à rappeler"
+            # Si le contact a un updated_at, c'est qu'il a déjà été appelé -> "to recall"
             if display_contact.get('updated_at'):
-                display_contact['status'] = 'à rappeler'
+                display_contact['status'] = 'to recall'
             display_contacts.append(display_contact)
         
         st.dataframe(display_contacts, use_container_width=True)
@@ -350,9 +350,9 @@ Martin,Marie,0687654321""")
         display_to_recall = []
         for contact in to_recall:
             display_contact = contact.copy()
-            # Si le contact a un updated_at, c'est qu'il a déjà été appelé -> "à rappeler"
+            # Si le contact a un updated_at, c'est qu'il a déjà été appelé -> "to recall"
             if display_contact.get('updated_at'):
-                display_contact['status'] = 'à rappeler'
+                display_contact['status'] = 'to recall'
             display_to_recall.append(display_contact)
         
         st.dataframe(display_to_recall, use_container_width=True)
