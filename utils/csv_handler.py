@@ -15,8 +15,14 @@ class CsvHandler:
         - '33612345678' -> '+33612345678'
         - '+33612345678' -> '+33612345678'
         """
+        original_phone = phone
+        
         # Nettoyer: enlever espaces, points, tirets, parenthèses
         phone = re.sub(r'[\s\.\-\(\)]', '', phone.strip())
+        
+        # Vérifier que le numéro n'est pas vide après nettoyage
+        if not phone or not any(c.isdigit() for c in phone):
+            raise ValueError(f"Numéro de téléphone vide ou invalide: '{original_phone}'")
         
         # Si le numéro commence par '00', remplacer par '+'
         if phone.startswith('00'):
@@ -28,12 +34,26 @@ class CsvHandler:
             phone = '+33' + phone[1:]
         
         # Si le numéro commence par un chiffre (pas de +), ajouter +
-        elif phone[0].isdigit() and not phone.startswith('+'):
+        elif phone and phone[0].isdigit() and not phone.startswith('+'):
             phone = '+' + phone
         
-        # Validation basique: doit commencer par + et contenir au moins 10 chiffres
-        if not phone.startswith('+') or len(re.sub(r'\D', '', phone)) < 10:
-            raise ValueError(f"Format de téléphone invalide: {phone}")
+        # Compter uniquement les chiffres
+        digits_only = re.sub(r'\D', '', phone)
+        
+        # Validation stricte:
+        # - Doit commencer par +
+        # - Doit contenir au moins 10 chiffres (standard international minimum)
+        # - Pour la France (+33), doit avoir exactement 11 chiffres (33 + 9 chiffres)
+        if not phone.startswith('+'):
+            raise ValueError(f"Le numéro doit être au format international (+): '{original_phone}'")
+        
+        if len(digits_only) < 10:
+            raise ValueError(f"Numéro trop court ({len(digits_only)} chiffres, minimum 10 requis): '{original_phone}' -> '{phone}'")
+        
+        # Validation spécifique pour numéros français
+        if phone.startswith('+33'):
+            if len(digits_only) != 11:  # 33 + 9 chiffres
+                raise ValueError(f"Numéro français invalide ({len(digits_only)} chiffres, 11 requis pour +33): '{original_phone}' -> '{phone}'")
         
         return phone
     
