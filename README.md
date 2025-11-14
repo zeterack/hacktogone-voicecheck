@@ -6,11 +6,15 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.29-red.svg)](https://streamlit.io/)
 
+**Équipe** : GoneToHack69  
+**Sujet** : Voice AI Checker  
+**Hackathon** : Hacktogone 2025 - Stade Vélodrome, Marseille
+
 ---
 
 ## 🎯 Description
 
-**VoiceCheck AI** est une solution développée lors d'un hackathon de 20h pour automatiser la vérification de bases de contacts via des appels téléphoniques intelligents avec IA conversationnelle.
+**VoiceCheck AI** est une solution développée lors du hackathon Hacktogone 2025 (48h) pour automatiser la vérification de bases de contacts via des appels téléphoniques intelligents avec IA conversationnelle.
 
 ### ✨ Fonctionnalités principales
 
