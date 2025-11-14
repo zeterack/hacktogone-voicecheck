@@ -6,6 +6,8 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.29-red.svg)](https://streamlit.io/)
 
+**🌐 Production** : [https://hacktogone-voicecheck-bg7ywpabyeghzwkwgrgddl.streamlit.app/](https://hacktogone-voicecheck-bg7ywpabyeghzwkwgrgddl.streamlit.app/)
+
 **Équipe** : GoneToHack69  
 **Sujet** : Voice AI Checker  
 **Hackathon** : Hacktogone 2025 - Stade Vélodrome, Marseille
@@ -119,7 +121,7 @@ git push origin main
 
 4. **Déployer** 🚀
    - L'app se déploie automatiquement
-   - URL publique générée : `https://VOTRE-APP.streamlit.app`
+   - URL de production : [https://hacktogone-voicecheck-bg7ywpabyeghzwkwgrgddl.streamlit.app/](https://hacktogone-voicecheck-bg7ywpabyeghzwkwgrgddl.streamlit.app/)
 
 > 💡 **Astuce** : Les secrets Streamlit Cloud sont chiffrés et ne sont jamais exposés dans les logs.
 
