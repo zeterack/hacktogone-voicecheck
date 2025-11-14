@@ -73,10 +73,20 @@ class JsonDatabase:
         contacts = self.load_contacts()
         return [c for c in contacts if c.get('status') == 'pending']
     
+    def get_completed_contacts(self) -> List[Dict]:
+        """Récupère les contacts terminés"""
+        contacts = self.load_contacts()
+        return [c for c in contacts if c.get('status') == 'completed']
+    
     def load_results(self) -> List[Dict]:
         """Charge tous les résultats"""
         with open(self.results_file, 'r') as f:
             return json.load(f)
+    
+    def save_results(self, results: List[Dict]):
+        """Sauvegarde tous les résultats"""
+        with open(self.results_file, 'w') as f:
+            json.dump(results, f, indent=2)
     
     def save_result(self, result: Dict):
         """Sauvegarde un résultat d'appel"""

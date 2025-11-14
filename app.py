@@ -163,7 +163,17 @@ Martin,Marie,0687654321""")
     
     if pending_contacts:
         st.write(f"**{len(pending_contacts)} contact(s) en attente**")
-        st.dataframe(pending_contacts, use_container_width=True)
+        
+        # Modifier le statut pour l'affichage
+        display_contacts = []
+        for contact in pending_contacts:
+            display_contact = contact.copy()
+            # Si le contact a un updated_at, c'est qu'il a déjà été appelé -> "à rappeler"
+            if display_contact.get('updated_at'):
+                display_contact['status'] = 'à rappeler'
+            display_contacts.append(display_contact)
+        
+        st.dataframe(display_contacts, use_container_width=True)
     else:
         st.info("Aucun contact en attente")
     
@@ -335,7 +345,17 @@ Martin,Marie,0687654321""")
     
     if to_recall:
         st.write(f"**{len(to_recall)} contact(s) à rappeler**")
-        st.dataframe(to_recall, use_container_width=True)
+        
+        # Modifier le statut pour l'affichage
+        display_to_recall = []
+        for contact in to_recall:
+            display_contact = contact.copy()
+            # Si le contact a un updated_at, c'est qu'il a déjà été appelé -> "à rappeler"
+            if display_contact.get('updated_at'):
+                display_contact['status'] = 'à rappeler'
+            display_to_recall.append(display_contact)
+        
+        st.dataframe(display_to_recall, use_container_width=True)
         
         if st.button("📞 Relancer ces contacts"):
             try:
@@ -373,28 +393,41 @@ with tab3:
         df = CsvHandler.export_results(results)
         st.dataframe(df, use_container_width=True)
         
-        col1, col2 = st.columns([3, 1])
+        # Bouton de téléchargement avec date de campagne
+        csv = df.to_csv(index=False)
+        campaign_date = db.get_campaign_start_date()
+        file_name = f"campagne_du_{campaign_date}.csv" if campaign_date else "voicecheck_results.csv"
         
-        with col1:
-            # Bouton de téléchargement avec date de campagne
-            csv = df.to_csv(index=False)
-            campaign_date = db.get_campaign_start_date()
-            file_name = f"campagne_du_{campaign_date}.csv" if campaign_date else "voicecheck_results.csv"
-            
-            st.download_button(
-                label="📥 Télécharger en CSV",
-                data=csv,
-                file_name=file_name,
-                mime="text/csv"
-            )
+        st.download_button(
+            label="📥 Exporter la campagne",
+            data=csv,
+            file_name=file_name,
+            mime="text/csv"
+        )
         
-        with col2:
-            # Bouton de réinitialisation
-            if st.button("🗑️ Réinitialiser la campagne", type="secondary"):
-                st.warning("⚠️ Cette action est irréversible !")
-                if st.button("✅ Confirmer la réinitialisation", type="primary"):
+        # Bouton de réinitialisation
+        st.divider()
+        
+        # Initialiser l'état de confirmation si nécessaire
+        if 'confirm_reset' not in st.session_state:
+            st.session_state.confirm_reset = False
+        
+        if not st.session_state.confirm_reset:
+            if st.button("🗑️ Réinitialiser la campagne", type="secondary", key="reset_btn_1"):
+                st.session_state.confirm_reset = True
+                st.rerun()
+        else:
+            st.warning("⚠️ Cette action supprimera tous les contacts et résultats. Cette action est irréversible !")
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("✅ Confirmer la réinitialisation", type="primary", key="confirm_reset_1"):
                     db.reset_campaign()
+                    st.session_state.confirm_reset = False
                     st.success("Campagne réinitialisée avec succès")
+                    st.rerun()
+            with col2:
+                if st.button("❌ Annuler", key="cancel_reset_1"):
+                    st.session_state.confirm_reset = False
                     st.rerun()
     else:
         st.info("Aucun résultat à exporter")
@@ -402,12 +435,28 @@ with tab3:
         # Option de réinitialisation même s'il n'y a pas de résultats (au cas où il y a des contacts)
         if db.get_pending_contacts() or db.get_completed_contacts():
             st.divider()
-            if st.button("🗑️ Réinitialiser la campagne", type="secondary"):
-                st.warning("⚠️ Cette action supprimera tous les contacts. Cette action est irréversible !")
-                if st.button("✅ Confirmer la réinitialisation", type="primary"):
-                    db.reset_campaign()
-                    st.success("Campagne réinitialisée avec succès")
+            
+            # Initialiser l'état de confirmation si nécessaire
+            if 'confirm_reset_no_results' not in st.session_state:
+                st.session_state.confirm_reset_no_results = False
+            
+            if not st.session_state.confirm_reset_no_results:
+                if st.button("🗑️ Réinitialiser la campagne", type="secondary", key="reset_btn_2"):
+                    st.session_state.confirm_reset_no_results = True
                     st.rerun()
+            else:
+                st.warning("⚠️ Cette action supprimera tous les contacts. Cette action est irréversible !")
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("✅ Confirmer la réinitialisation", type="primary", key="confirm_reset_2"):
+                        db.reset_campaign()
+                        st.session_state.confirm_reset_no_results = False
+                        st.success("Campagne réinitialisée avec succès")
+                        st.rerun()
+                with col2:
+                    if st.button("❌ Annuler", key="cancel_reset_2"):
+                        st.session_state.confirm_reset_no_results = False
+                        st.rerun()
 
 # Footer
 st.divider()
