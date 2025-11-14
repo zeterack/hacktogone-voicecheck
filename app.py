@@ -240,7 +240,13 @@ Martin,Marie,0687654321""")
                             break
                         
                         # Vérifier si l'appel est terminé
-                        status = call_status.get('status', '').lower()
+                        try:
+                            status = call_status.get('status', '').lower() if call_status.get('status') else ''
+                        except (AttributeError, TypeError) as e:
+                            logger.error(f"❌ Erreur lors du traitement du status (numéro invalide?): {e}")
+                            status = 'failed'
+                            call_completed = True  # Forcer la sortie de la boucle
+                        
                         logger.debug(f"Status actuel: {status}")
                         
                         if status in ['completed', 'done', 'finished']:
@@ -249,6 +255,10 @@ Martin,Marie,0687654321""")
                             transcript = call_status.get('concatenated_transcript', '') or call_status.get('transcript', '') or call_status.get('transcription', '')
                             logger.info(f"✅ Appel terminé! Transcript récupéré (longueur: {len(transcript)} caractères)")
                             logger.debug(f"Transcript complet: {transcript[:500]}..." if len(transcript) > 500 else f"Transcript complet: {transcript}")
+                            break
+                        elif status == 'failed':
+                            # Numéro invalide ou erreur d'appel
+                            logger.warning(f"⚠️ Appel échoué (numéro invalide ou erreur)")
                             break
                     
                     if not call_completed:
