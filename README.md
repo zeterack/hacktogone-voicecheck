@@ -40,9 +40,9 @@
 git clone https://github.com/zeterack/hacktogone-voicecheck.git
 cd hacktogone-voicecheck
 
-# 2. Configurer les variables d'environnement
-cp .env.example .env
-# Éditer .env avec vos clés API
+# 2. Configurer les secrets Streamlit
+cp .streamlit/secrets.toml.example .streamlit/secrets.toml
+# Éditer .streamlit/secrets.toml avec vos clés API
 
 # 3. Lancer avec Docker Compose
 docker-compose up --build
@@ -275,19 +275,6 @@ Martin,Marie,+33687654321
 | Dupont | Jean | +33612345678 | ✅ True | ❌ False | ✅ True | ❌ False | Consentement et identité confirmés |
 | Martin | Sophie | +33698765432 | ❌ False | ❌ False | ❌ False | ✅ True | répondeur détecté |
 | Bernard | Marc | +33687654321 | ❌ False | ✅ True | ❌ False | ❌ False | Refus explicite du consentement |
-
----
-
-## 🎥 Démonstration
-
-### Captures d'écran
-
-#### Dashboard
-![Dashboard](https://via.placeholder.com/800x400?text=Dashboard+VoiceCheck+AI)
-
-#### Lancement de campagne
-![Campagne](https://via.placeholder.com/800x400?text=Lancement+Campagne)
-
 ---
 
 ## 🤝 Contribution
@@ -315,4 +302,4 @@ Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de 
 
 ---
 
-**Made with ❤️ during Blueway Hackathon 2025**
+**Made with ❤️ during Hackathon 2025**
