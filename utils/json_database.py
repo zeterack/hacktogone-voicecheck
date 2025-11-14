@@ -126,3 +126,29 @@ class JsonDatabase:
             return "1"
         max_id = max([int(c['id']) for c in contacts if c.get('id', '').isdigit()], default=0)
         return str(max_id + 1)
+    
+    def reset_campaign(self):
+        """Réinitialise complètement la campagne (supprime tous les contacts et résultats)"""
+        logger.warning("Réinitialisation de la campagne - suppression de tous les contacts et résultats")
+        self.save_contacts([])
+        self.save_results([])
+        logger.info("Campagne réinitialisée avec succès")
+    
+    def get_campaign_start_date(self) -> Optional[str]:
+        """Retourne la date de début de la campagne (date du premier contact ajouté)"""
+        contacts = self.load_contacts()
+        if not contacts:
+            return None
+        
+        # Trouver le contact le plus ancien
+        dates = [c.get('created_at') for c in contacts if c.get('created_at')]
+        if not dates:
+            return None
+        
+        earliest = min(dates)
+        # Convertir ISO format vers format lisible
+        try:
+            dt = datetime.fromisoformat(earliest)
+            return dt.strftime("%Y-%m-%d")
+        except:
+            return None

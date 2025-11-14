@@ -155,8 +155,6 @@ Martin,Marie,0687654321""")
             - Les espaces, tirets et points seront supprimés
             - Le `+` sera ajouté automatiquement si manquant
             """)
-        
-        st.info("💡 Téléchargez `sample_contacts.csv` pour un exemple")
     
     # Liste des contacts en attente
     st.subheader("2. Contacts en attente")
@@ -375,16 +373,41 @@ with tab3:
         df = CsvHandler.export_results(results)
         st.dataframe(df, use_container_width=True)
         
-        # Bouton de téléchargement
-        csv = df.to_csv(index=False)
-        st.download_button(
-            label="📥 Télécharger en CSV",
-            data=csv,
-            file_name="voicecheck_results.csv",
-            mime="text/csv"
-        )
+        col1, col2 = st.columns([3, 1])
+        
+        with col1:
+            # Bouton de téléchargement avec date de campagne
+            csv = df.to_csv(index=False)
+            campaign_date = db.get_campaign_start_date()
+            file_name = f"campagne_du_{campaign_date}.csv" if campaign_date else "voicecheck_results.csv"
+            
+            st.download_button(
+                label="📥 Télécharger en CSV",
+                data=csv,
+                file_name=file_name,
+                mime="text/csv"
+            )
+        
+        with col2:
+            # Bouton de réinitialisation
+            if st.button("🗑️ Réinitialiser la campagne", type="secondary"):
+                st.warning("⚠️ Cette action est irréversible !")
+                if st.button("✅ Confirmer la réinitialisation", type="primary"):
+                    db.reset_campaign()
+                    st.success("Campagne réinitialisée avec succès")
+                    st.rerun()
     else:
         st.info("Aucun résultat à exporter")
+        
+        # Option de réinitialisation même s'il n'y a pas de résultats (au cas où il y a des contacts)
+        if db.get_pending_contacts() or db.get_completed_contacts():
+            st.divider()
+            if st.button("🗑️ Réinitialiser la campagne", type="secondary"):
+                st.warning("⚠️ Cette action supprimera tous les contacts. Cette action est irréversible !")
+                if st.button("✅ Confirmer la réinitialisation", type="primary"):
+                    db.reset_campaign()
+                    st.success("Campagne réinitialisée avec succès")
+                    st.rerun()
 
 # Footer
 st.divider()
