@@ -1,8 +1,41 @@
 import pandas as pd
+import re
 from typing import List, Dict
 
 class CsvHandler:
     """Gestion des imports/exports CSV"""
+    
+    @staticmethod
+    def format_phone_number(phone: str) -> str:
+        """
+        Formate un numéro de téléphone au format international
+        Exemples:
+        - '0612345678' -> '+33612345678'
+        - '06 12 34 56 78' -> '+33612345678'
+        - '33612345678' -> '+33612345678'
+        - '+33612345678' -> '+33612345678'
+        """
+        # Nettoyer: enlever espaces, points, tirets, parenthèses
+        phone = re.sub(r'[\s\.\-\(\)]', '', phone.strip())
+        
+        # Si le numéro commence par '00', remplacer par '+'
+        if phone.startswith('00'):
+            phone = '+' + phone[2:]
+        
+        # Si le numéro commence par '0' (numéro français local)
+        elif phone.startswith('0') and not phone.startswith('00'):
+            # Enlever le 0 et ajouter +33
+            phone = '+33' + phone[1:]
+        
+        # Si le numéro commence par un chiffre (pas de +), ajouter +
+        elif phone[0].isdigit() and not phone.startswith('+'):
+            phone = '+' + phone
+        
+        # Validation basique: doit commencer par + et contenir au moins 10 chiffres
+        if not phone.startswith('+') or len(re.sub(r'\D', '', phone)) < 10:
+            raise ValueError(f"Format de téléphone invalide: {phone}")
+        
+        return phone
     
     @staticmethod
     def import_contacts(file) -> List[Dict]:
@@ -16,19 +49,23 @@ class CsvHandler:
             raise ValueError(f"Le CSV doit contenir les colonnes : {', '.join(required_columns)}")
         
         contacts = []
-        for _, row in df.iterrows():
-            telephone = str(row['telephone']).strip()
-            
-            # Si le numéro ne commence pas par '+', l'ajouter
-            if not telephone.startswith('+'):
-                telephone = '+' + telephone
-            
-            contact = {
-                'nom': str(row['nom']).strip(),
-                'prenom': str(row['prenom']).strip(),
-                'telephone': telephone
-            }
-            contacts.append(contact)
+        errors = []
+        
+        for idx, row in df.iterrows():
+            try:
+                telephone = CsvHandler.format_phone_number(str(row['telephone']))
+                
+                contact = {
+                    'nom': str(row['nom']).strip(),
+                    'prenom': str(row['prenom']).strip(),
+                    'telephone': telephone
+                }
+                contacts.append(contact)
+            except ValueError as e:
+                errors.append(f"Ligne {idx + 2}: {str(e)}")
+        
+        if errors:
+            raise ValueError("Erreurs de formatage:\n" + "\n".join(errors))
         
         return contacts
     

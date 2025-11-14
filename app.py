@@ -139,9 +139,24 @@ with tab2:
         st.write("**Format CSV requis:**")
         st.code("""nom,prenom,telephone
 Dupont,Jean,+33612345678
-Martin,Marie,+33687654321""")
-        st.info("ℹ️ Les numéros doivent être au format international (+33...)")
-        st.info("💡 Téléchargez `exemple_contacts.csv` pour un modèle")
+Martin,Marie,0687654321""")
+        
+        with st.expander("📋 Formats de téléphone acceptés"):
+            st.markdown("""
+            **Tous ces formats sont acceptés:**
+            - `+33612345678` ✅ (format international)
+            - `0612345678` ✅ (format local FR)
+            - `33612345678` ✅ (sans le +)
+            - `06 12 34 56 78` ✅ (avec espaces)
+            - `+33 6 12 34 56 78` ✅ (international avec espaces)
+            
+            **Conversion automatique:**
+            - Les numéros français commençant par `0` seront convertis en `+33`
+            - Les espaces, tirets et points seront supprimés
+            - Le `+` sera ajouté automatiquement si manquant
+            """)
+        
+        st.info("💡 Téléchargez `sample_contacts.csv` pour un exemple")
     
     # Liste des contacts en attente
     st.subheader("2. Contacts en attente")
